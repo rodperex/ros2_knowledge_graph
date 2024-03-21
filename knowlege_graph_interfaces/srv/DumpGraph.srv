@@ -1,3 +1,4 @@
 string format
 ---
+bool success
 string kg_str
