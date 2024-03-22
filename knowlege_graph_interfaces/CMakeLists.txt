@@ -19,6 +19,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/AddEdge.srv"
   "srv/AddNode.srv"
   "srv/DumpGraph.srv"
+  "srv/NavRoute.srv"
+  "srv/Operate.srv"
   DEPENDENCIES builtin_interfaces std_msgs
 )
 

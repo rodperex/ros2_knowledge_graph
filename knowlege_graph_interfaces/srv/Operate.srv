@@ -1,0 +1,6 @@
+string operation
+string[] payload
+string format
+---
+bool success
+string kg_str
