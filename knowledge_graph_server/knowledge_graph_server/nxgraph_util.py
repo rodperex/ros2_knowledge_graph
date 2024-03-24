@@ -118,12 +118,21 @@ def transform_to_undirected(digraph):
     return undirected_graph
 
 
+def get_immediate_predecessors(graph, node):
+    predecessors = []
+    for in_neighbor, _ in graph.in_edges(node):
+        predecessors.append(in_neighbor)
+    return predecessors
+
 def get_shortest_route(graph, origin, destination):
     if origin not in graph or destination not in graph:
         raise ValueError("Node not found in the graph.")
 
-    predecessors_origin = set([pred for pred in graph.predecessors(origin) if graph.nodes[pred]['type'] == 'floor'])
-    predecessors_destination = set([pred for pred in graph.predecessors(destination) if graph.nodes[pred]['type'] == 'floor'])
+    # predecessors_origin = set([pred for pred in graph.predecessors(origin) if graph.nodes[pred]['type'] == 'floor'])
+    # predecessors_destination = set([pred for pred in graph.predecessors(destination) if graph.nodes[pred]['type'] == 'floor'])
+
+    predecessors_origin = set(get_immediate_predecessors(graph, origin))
+    predecessors_destination = set(get_immediate_predecessors(graph, destination))
 
     if predecessors_origin & predecessors_destination:
         shortest_path = [origin, destination]
@@ -136,5 +145,81 @@ def get_shortest_route(graph, origin, destination):
                 break
         
     return shortest_path
+
+def check_affordance(graph, node, affordance):
+    attributes = graph.nodes[node]
+    affordances = attributes['affordances']
+    return affordance in affordances
+
+def check_in_place(graph, entity, place):
+    return entity in graph.neighbors(place)
+
+def check_status(graph, entity, status):
+    return graph.nodes[entity]['status'] == status
+
+def verify_plan(graph, start_location, plan):
+    feasible = True
+    message = 'Plan is feasible'
+    picked = []
+    location = start_location
+    for action in plan:
+        if (action.action == 'navigate'):
+            origin = action.target[0]
+            destination = action.target[1]
+            
+            if origin != location:
+                feasible = False
+                message = 'Navigation impossible: start location (\'%s\') is not the same as the origin (\'%s\')' % (start_location, origin)
+                break
+            try:
+                get_shortest_route(graph, origin, destination)
+                location = destination
+            except Exception as e:
+                feasible = False
+                message = 'Navigation impossible: %s' % str(e)
+                break
+        elif (action.action == 'pick'):
+            target = action.target[0]
+            if not check_affordance(graph, target, action.action):
+                feasible = False
+                message = 'Object \'%s\' not pickable' % target
+                break
+            if not check_in_place(graph, target, location):
+                feasible = False
+                message = 'Object \'%s\' not in place \'%s\'' % (target, location)
+                break
+            picked.append(target)
+        elif (action.action == 'put'):
+            target = action.target[0]
+            if not check_affordance(graph, target, action.action):
+                feasible = False
+                message = 'Object \'%s\' not puttable' % target
+                break
+            if target not in picked:
+                feasible = False
+                message = 'Object \'%s\' not picked' % target
+                break
+        elif (action.action == 'talk'):
+            target = action.target[0]
+            if not check_affordance(graph, target, action.action):
+                feasible = False
+                message = 'Person \'%s\' not talkable' % target
+                break
+        elif (action.action == 'open'):
+            target = action.target[0]
+            if not check_affordance(graph, target, action.action):
+                feasible = False
+                message = 'Person \'%s\' not talkable' % target
+                break
+            if not check_status(graph, target, 'closed'):
+                feasible = False
+                message = 'Object \'%s\' not closed' % target
+                break
+
+        else:
+            feasible = False
+            message = 'Unknown action type: \'%s\'' % action.action
+                    
+    return [feasible, message]
     
     

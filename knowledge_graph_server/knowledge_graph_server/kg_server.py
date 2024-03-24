@@ -2,33 +2,38 @@ import rclpy
 from knowledge_graph_interfaces.srv import (
     AddEdge,
     AddNode,
+    UpdateNode,
     DumpGraph,
     NavRoute, 
-    Operate
+    Operate,
+    Verify
     )
 from rclpy.node import Node
 import networkx as nx
 import knowledge_graph_server.nxgraph_util as nxutil
+import matplotlib.pyplot as plt
+
 
 class KnowledgeGraphServer(Node):
     
     kg = nx.DiGraph()
-    floor_attr  = ['id', 'type', 'level']
-    room_attr   = ['id', 'type', 'class', 'shape', 'size']
-    object_attr = ['id', 'type', 'class', 'color', 'material', 'weight', 'area', 'affordances']
-    person_attr = ['id', 'type', 'name', 'age', 'gender', 'role']
-    door_attr   = ['id', 'type', 'class', 'status', 'affordances']
+    floor_attr  = ['level']
+    room_attr   = ['class', 'shape', 'size']
+    object_attr = ['class', 'color', 'material', 'weight', 'area']
+    person_attr = ['name', 'age', 'gender', 'role']
 
     def __init__(self):
         super().__init__('knowledge_graph')
         self.srv_edge = self.create_service(AddEdge, 'add_edge', self.add_edge)
         self.srv_node = self.create_service(AddNode, 'add_node', self.add_node)
+        self.srv_update = self.create_service(UpdateNode, 'update_node', self.add_node)
         self.srv_dump = self.create_service(DumpGraph, 'dump_graph', self.dump_graph)
         self.srv_route = self.create_service(NavRoute, 'nav_route', self.nav_route)
         self.srv_operate = self.create_service(Operate, 'operate', self.operate)
+        self.srv_verify = self.create_service(Verify, 'verify_plan', self.verify_plan)
 
     def add_edge(self, request, response):
-        self.get_logger().info('Adding edge between %s and %s (%s)' % (request.parent, request.child, request.relationship))
+        self.get_logger().info('Adding edge %s -> %s (%s)' % (request.parent, request.child, request.relationship))
         
         try:
             self.kg.add_edge(request.parent, request.child,
@@ -42,9 +47,9 @@ class KnowledgeGraphServer(Node):
         return response
     
     def add_node(self, request, response):
-        self.get_logger().info('Adding node %s of type %s' % (request.attr[0], request.attr[1]))
+        self.get_logger().info('Adding node %s (type: %s)' % (request.id, request.type))
         
-        node_type = request.attr[1]
+        node_type = request.type
 
         if node_type == 'floor':
             data = self.floor_attr
@@ -58,18 +63,43 @@ class KnowledgeGraphServer(Node):
             data = None
 
         if data is not None:
-            node = dict(zip(data, request.attr))
+            attr = request.attr
+            attr.append(request.aff)
+
+            node_attr = dict(zip(data, request.attr))
             try:
-                self.kg.add_node(node['id'], **node)
+                self.kg.add_node(request.id, attr=node_attr, affordances=request.aff, status=request.status)
                 response.success = True
             except nx.NetworkXError:
-                self.get_logger().error('NetworkX error adding node %s' % node['id'])
+                self.get_logger().error('NetworkX error adding node %s' % request.id)
                 response.success = False
         else:
             self.get_logger().error('Wrong attributes provided')
             response.success = False
         
         return response
+    
+    def update_node(self, request, response):
+        self.get_logger().info('Updating node %s (type: %s)' % (request.id, request.type))
+
+        node = self.kg.nodes[request.attr[0]]
+        
+        node_type = request.attr[1]
+
+        if node_type != self.kg.nodes[node]['type']:
+            self.get_logger().error('Type mismatch')
+            response.success = False
+        else:
+            attr = request.attr
+            attr.append(request.aff)
+            
+            try:
+                self.kg.nodes[node].update(attr)
+                response.success = True
+            except nx.NetworkXError:
+                self.get_logger().error('NetworkX error updating node %s' % node['id'])
+                response.success = False
+        
             
     def dump_graph(self, request, response):
         self.get_logger().info('Dumping graph in %s format' % request.format.upper())
@@ -131,10 +161,6 @@ class KnowledgeGraphServer(Node):
             else:
                 subgraph_str = None
             response.success = True
-        elif request.operation == 'verify_plan':
-            plan = request.payload
-            # TODO
-            response.success = True
         else:
             self.get_logger().error('Unknown operation %s' % request.operation)
             subgraph_str = ''
@@ -146,6 +172,21 @@ class KnowledgeGraphServer(Node):
             response.success = False
         
         response.kg_str = subgraph_str
+        return response
+
+    def verify_plan(self, request, response):
+        self.get_logger().info('Verifying plan')
+
+        try:
+            ret = nxutil.verify_plan(self.kg, request.start_location, request.plan)
+            response.feasible = ret[0]
+            response.message = ret[1]
+        except Exception as e:
+            self.get_logger().error('Error verifying plan: %r' % (e,))
+            response.feasible = False
+        
+        self.get_logger().info('Plan verification result: %s' % response.message)
+        
         return response
 
 def main(args=None):

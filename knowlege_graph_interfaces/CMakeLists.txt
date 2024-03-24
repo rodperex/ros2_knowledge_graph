@@ -18,9 +18,12 @@ find_package(std_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/AddEdge.srv"
   "srv/AddNode.srv"
+  "srv/UpdateNode.srv"
   "srv/DumpGraph.srv"
   "srv/NavRoute.srv"
   "srv/Operate.srv"
+  "srv/Verify.srv"
+  "msg/PlanAction.msg"
   DEPENDENCIES builtin_interfaces std_msgs
 )
 

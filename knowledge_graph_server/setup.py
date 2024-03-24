@@ -20,7 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
     'console_scripts': [
-        'service = knowledge_graph_server.kg_server:main'
+        'server = knowledge_graph_server.kg_server:main',
+        'client = knowledge_graph_server.kg_client:main',
         ],
     },
 )

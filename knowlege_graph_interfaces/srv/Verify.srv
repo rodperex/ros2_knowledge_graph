@@ -1,0 +1,5 @@
+string start_location
+PlanAction[] plan
+---
+bool feasible
+string message

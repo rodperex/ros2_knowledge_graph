@@ -5,69 +5,55 @@ import nxgraph_util as nxutil
 
 scene_graph = nx.DiGraph()
 
-floor_attr  = ['id', 'type', 'level']
-room_attr   = ['id', 'type', 'class', 'shape', 'size']
-object_attr = ['id', 'type', 'class', 'color', 'material', 'weight', 'area', 'affordances']
-person_attr = ['id', 'type', 'name', 'age', 'gender', 'role']
+floor_attr  = ['level']
+room_attr   = ['class', 'shape', 'size']
+object_attr = ['class', 'color', 'material', 'weight', 'area']
+person_attr = ['name', 'age', 'gender', 'role']
 
+scene_graph.add_node('first_floor', type='floor', attr=dict(zip(floor_attr, ['1'])), affordances=[], status='')
+scene_graph.add_node('ground_floor', type='floor', attr=dict(zip(floor_attr, ['0'])), affordances=[], status='')
+scene_graph.add_edge('ground_floor', 'first_floor' , relationship='connects')
 
-floor = dict(zip(floor_attr, ['first_floor', 'floor', '1']))
-scene_graph.add_node(floor['id'], **floor)
-floor = dict(zip(floor_attr, ['ground_floor', 'floor', '0']))
-scene_graph.add_node(floor['id'], **floor)
+scene_graph.add_node('kitchen_1', type='room', attr=dict(zip(room_attr, ['kitchen', 'square', 'big'])), affordances=[], status='')
+scene_graph.add_edge('ground_floor', 'kitchen_1', relationship='contains')
 
-scene_graph.add_edge(floor['id'], 'first_floor' , relationship='connects')
+scene_graph.add_node('living_room_1', type='room', attr=dict(zip(room_attr, ['living_room', 'square', 'big'])), affordances=[], status='')
+scene_graph.add_edge('ground_floor', 'living_room_1', relationship='contains')
 
-room = dict(zip(room_attr, ['kitchen_1', 'room', 'kitchen', 'square', 'big']))
-scene_graph.add_node(room['id'], **room)
-scene_graph.add_edge('ground_floor', room['id'], relationship='contains')
+scene_graph.add_node('table_1', type='object', attr=dict(zip(object_attr, ['table', 'brown', 'wood', 'heavy', 'big'])), affordances=['put on', 'pick from'], status='')
+scene_graph.add_edge('living_room_1', 'table_1', relationship='contains')
 
-room = dict(zip(room_attr, ['living_room_1', 'room', 'living_room', 'square', 'big']))
-scene_graph.add_node(room['id'], **room)
-scene_graph.add_edge('ground_floor', room['id'], relationship='contains')
+scene_graph.add_node('chair_1', type='object', attr=dict(zip(object_attr, ['chair', 'brown', 'wood', 'light', 'small'])), affordances=['sit'], status='free')
+scene_graph.add_edge('living_room_1', 'chair_1', relationship='contains')
 
-object = dict(zip(object_attr, ['table_1', 'object', 'table', 'brown', 'wood', 'heavy', 'big', ['put on', 'pick from']]))
-scene_graph.add_node(object['id'], **object)
-scene_graph.add_edge('living_room_1', object['id'], relationship='contains')
+scene_graph.add_node('chair_2', type='object', attr=dict(zip(object_attr, ['chair', 'brown', 'wood', 'light', 'small'])), affordances=['sit'], status='free')
+scene_graph.add_edge('kitchen_1', 'chair_2', relationship='contains')
 
-object = dict(zip(object_attr, ['chair_1', 'object', 'chair', 'brown', 'wood', 'light', 'small', ['sit']]))
-scene_graph.add_node(object['id'], **object)
-scene_graph.add_edge('living_room_1', object['id'], relationship='contains')
+scene_graph.add_node('fridge_1', type='object', attr=dict(zip(object_attr, ['chair', 'brown', 'wood', 'light', 'small'])), affordances=['open', 'close'], status='closed')
+scene_graph.add_edge('kitchen_1', 'fridge_1', relationship='contains')
 
-object = dict(zip(object_attr, ['chair_2', 'object', 'chair', 'brown', 'wood', 'light', 'small', ['sit']]))
-scene_graph.add_node(object['id'], **object)
-scene_graph.add_edge('kitchen_1', object['id'], relationship='contains')
+scene_graph.add_node('John_1', type='person', attr=dict(zip(person_attr, ['John', '30', 'male', 'owner'])), affordances=['talk'], status='')
+scene_graph.add_edge('living_room_1', 'John_1', relationship='contains')
+scene_graph.add_edge('John_1', 'table_1', relationship='looks_at')
 
-object = dict(zip(object_attr, ['fridge_1', 'object', 'fridge', 'white', 'metal', 'heavy', 'big', ['open', 'close']]))
-scene_graph.add_node(object['id'], **object)
-scene_graph.add_edge('kitchen_1', object['id'], relationship='contains')
+scene_graph.add_node('Mary_1', type='person', attr=dict(zip(person_attr, ['Mary', '56', 'female', 'guest'])), affordances=['talk'], status='')
+scene_graph.add_edge('kitchen_1', 'Mary_1', relationship='contains')
+scene_graph.add_edge('Mary_1', 'chair_2', relationship='sits_on')
 
-person = dict(zip(person_attr, ['John_1', 'person', 'John', '30', 'male', 'owner']))
-scene_graph.add_node(person['id'], **person)
-scene_graph.add_edge('living_room_1', person['id'], relationship='contains')
-scene_graph.add_edge(person['id'], 'table_1', relationship='looks_at')
+scene_graph.add_node('bedroom_1', type='room', attr=dict(zip(room_attr, ['bedroom', 'square', 'small'])), affordances=[], status='')
+scene_graph.add_edge('first_floor', 'bedroom_1', relationship='contains')
 
-person = dict(zip(person_attr, ['Mary_1', 'person', 'Mary', '56', 'female', 'guest']))
-scene_graph.add_node(person['id'], **person)
-scene_graph.add_edge('kitchen_1', person['id'], relationship='contains')
-scene_graph.add_edge(person['id'], 'chair_2', relationship='sits_on')
+scene_graph.add_node('bed_1', type='object', attr=dict(zip(object_attr, ['bed', 'blue', 'wood', 'heavy', 'medium'])), affordances=['make'], status='busy')
+scene_graph.add_edge('bedroom_1', 'bed_1', relationship='contains')
 
-room = dict(zip(room_attr, ['bedroom_1', 'room', 'bedroom', 'square', 'small']))
-scene_graph.add_node(room['id'], **room)
-scene_graph.add_edge('first_floor', room['id'], relationship='contains')
-
-object = dict(zip(object_attr, ['bed_1', 'object', 'bed', 'blue', 'wood', 'heavy', 'medium', ['make']]))
-scene_graph.add_node(object['id'], **object)
-scene_graph.add_edge('bedroom_1', object['id'], relationship='contains')
-
-person = dict(zip(person_attr, ['Magic_1', 'person', 'Magic', '33', 'male', 'guest']))
-scene_graph.add_node(person['id'], **person)
-scene_graph.add_edge('bedroom_1', person['id'], relationship='contains')
-scene_graph.add_edge(person['id'], 'bed_1', relationship='lays_on')
+scene_graph.add_node('Magic_1', type='person', attr=dict(zip(person_attr, ['Magic', '33', 'male', 'guest'])), affordances=[], status='')
+scene_graph.add_edge('bedroom_1', 'Magic_1', relationship='contains')
+scene_graph.add_edge('Magic_1', 'bed_1', relationship='lays_on')
 
 
 print('Shortest route between living_room_1 and kitchen_1:', nxutil.get_shortest_route(scene_graph, 'living_room_1', 'kitchen_1'))
 print('Shortest route between living_room_1 and bedroom_1:', nxutil.get_shortest_route(scene_graph, 'living_room_1', 'bedroom_1'))
+print('The bed \'bed_1\' is :', scene_graph.nodes['bed_1']['status'])
 
 plt.figure(1)
 plt.figure(2)
