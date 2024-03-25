@@ -12,8 +12,6 @@ from knowledge_graph_interfaces.srv import (
 from rclpy.node import Node
 import networkx as nx
 import knowledge_graph_server.nxgraph_util as nxutil
-import matplotlib.pyplot as plt
-
 
 class KnowledgeGraphServer(Node):
     
