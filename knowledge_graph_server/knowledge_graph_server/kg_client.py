@@ -10,7 +10,10 @@ from knowledge_graph_interfaces.srv import (
     Verify
     )
 from rclpy.node import Node
-
+import networkx as nx
+import matplotlib.pyplot as plt
+import json
+import yaml
 
 class KnowledgeGraphClient(Node):
 
@@ -41,6 +44,12 @@ class KnowledgeGraphClient(Node):
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service \'add_edge\' not available, waiting again...')
         self.req = AddEdge.Request()
+    
+    def create_dump_graph_client(self):
+        self.cli = self.create_client(DumpGraph, 'dump_graph')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service \'dump_graph\' not available, waiting again...')
+        self.req = DumpGraph.Request()
 
     def send_verify_request(self, start_location, plan):
         self.req.plan = plan
@@ -67,6 +76,10 @@ class KnowledgeGraphClient(Node):
         self.req.parent = parent
         self.req.child = child
         self.req.relationship = relationship
+        self.future = self.cli.call_async(self.req)
+
+    def send_dump_graph_request(self, format):
+        self.req.format = format
         self.future = self.cli.call_async(self.req)
 
     def get_response(self):
@@ -223,7 +236,16 @@ def print_plan(start_location, plan):
     for action in plan:
         print('\t-', action.action, ':', action.target)
 
+def create_graph_from_json(json_str):
+    json_data = json.loads(json_str)
+    
+    return nx.json_graph.adjacency_graph(json_data)
 
+def create_graph_from_yaml(yaml_str):
+    yaml_data = yaml.safe_load(yaml_str)
+    
+    return nx.json_graph.node_link_graph(yaml_data)
+    
 def main(args=None):
     rclpy.init(args=args)
     client = KnowledgeGraphClient()
@@ -258,6 +280,28 @@ def main(args=None):
     client.send_verify_request(start_location, plan)    
     response = client.get_response()
     print('Response received: ' + str(response))
+
+    client.create_dump_graph_client()
+    format = 'yaml'
+    client.send_dump_graph_request(format)
+    response = client.get_response()
+    # print('Response received: ' + str(response))
+    if response.success:
+        if format == 'json':
+            graph = create_graph_from_json(response.kg_str)
+        elif format == 'yaml':
+            graph = create_graph_from_yaml(response.kg_str)
+    plt.figure()
+    pos = nx.spring_layout(graph)
+    plt.title('Scene Graph')
+    nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    edge_labels = nx.get_edge_attributes(graph, 'relationship')
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels)
+    plt.ion()
+    plt.show()
+    input("Press Enter to close...")
+
+    plt.close('all')
 
 
     
