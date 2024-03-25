@@ -168,7 +168,7 @@ def create_sample_graph(client):
     print('Response received: ' + str(response))
 
     attr = ['fridge', 'white', 'metal', 'heavy', 'big']
-    client.send_add_node_request('fridge_1', 'object', attr, ['open', 'close'], 'closed')
+    client.send_add_node_request('fridge_1', 'object', attr, ['open', 'close'], 'close')
     response = client.get_response()
     print('Response received: ' + str(response))
 
@@ -368,20 +368,21 @@ def main(args=None):
     response = client.get_response()
     print('Response received: ' + str(response))
 
-    plan = create_sample_feasible_plan_3()
-    print('Plan to verify:')
-    print_plan('robot_1', plan)
-    client.send_verify_request('robot_1', plan)    
-    response = client.get_response()
-    print('Response received: ' + str(response))
 
     client.create_update_node_client()
     attr = ['fridge', 'white', 'metal', 'heavy', 'big']
     client.send_update_node_request('fridge_1', 'object', attr, ['open', 'close'], 'open')
     response = client.get_response()
     print('Response received: ' + str(response))
-    
+
     client.create_verify_client()
+    plan = create_sample_feasible_plan_3()
+    print('Plan to verify:')
+    print_plan('robot_1', plan)
+    client.send_verify_request('robot_1', plan)    
+    response = client.get_response()
+    print('Response received: ' + str(response))
+        
     plan = create_sample_feasible_plan_2()
     print('Plan to verify:')
     print_plan('robot_1', plan)

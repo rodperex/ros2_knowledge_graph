@@ -250,11 +250,19 @@ def verify_plan(graph, robot_id, plan):
                         feasible = False
                         message = 'Object \'%s\' already picked' % target
                         break
-                    evolving_graph.add_edge(robot_id, target, relationship='picked')
                     if action.action == 'pick_inside':
+                        precond = 'open'
+                        if not check_status(evolving_graph, action.target[1], precond):
+                            feasible = False
+                            message = 'Entity \'%s\' is closed' % action.target[1]
+                            break
                         evolving_graph.remove_edge(action.target[1], target)
+                    # evolving_graph.add_edge(robot_id, target, relationship='picked')
+                    # if action.action == 'pick_inside':
+                    #     evolving_graph.remove_edge(action.target[1], target)
                     elif action.action == 'pick':
                         evolving_graph.remove_edge(robot_location, target)
+                    evolving_graph.add_edge(robot_id, target, relationship='picked')
 
                 if action.action in place_actions:
                     if not check_edge(evolving_graph, robot_id, target, 'picked'):
@@ -269,8 +277,8 @@ def verify_plan(graph, robot_id, plan):
                         evolving_graph.remove_edge(robot_id, target)
                         evolving_graph.add_edge(robot_location, target, relationship='contains')
                     elif action.action == 'place_into':
-                        precond = 'closed'
-                        if check_status(evolving_graph, action.target[1], precond):
+                        precond = 'open'
+                        if not check_status(evolving_graph, action.target[1], precond):
                             feasible = False
                             message = 'Entity \'%s\' is closed' % action.target[1]
                             break
