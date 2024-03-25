@@ -158,7 +158,7 @@ def create_sample_graph(client):
     print('Response received: ' + str(response))
 
     attr = ['chair', 'brown', 'wood', 'light', 'small']
-    client.send_add_node_request('chair_1', 'object', attr, ['sit', 'pick', 'put'], 'free')
+    client.send_add_node_request('chair_1', 'object', attr, ['sit', 'pick', 'place_in'], 'free')
     response = client.get_response()
     print('Response received: ' + str(response))
 
@@ -172,6 +172,10 @@ def create_sample_graph(client):
     response = client.get_response()
     print('Response received: ' + str(response))
 
+    attr = ['carrot', 'orange', 'vegetable', 'fresh', 'small']
+    client.send_add_node_request('carrot', 'object', attr, ['pick', 'place_into'])
+    response = client.get_response()
+    print('Response received: ' + str(response))
 
     attr = ['John', '30', 'male', 'owner']
     client.send_add_node_request('John_1', 'person', attr, ['talk'])
@@ -232,6 +236,10 @@ def create_sample_graph(client):
     response = client.get_response()
     print('Response received: ' + str(response))
 
+    client.send_add_edge_request('fridge_1', 'carrot', 'contains')
+    response = client.get_response()
+    print('Response received: ' + str(response))
+
     client.send_add_edge_request('living_room_1', 'John_1', 'contains')
     response = client.get_response()
     print('Response received: ' + str(response))
@@ -260,9 +268,9 @@ def create_sample_graph(client):
 def create_sample_feasible_plan_1():
     plan = [
         PlanAction(action='navigate', target=['kitchen_1', 'living_room_1']),
-        PlanAction(action='pick', target=['chair_1']),
+        PlanAction(action='pick', target=['chair_1', 'living_room_1']),
         PlanAction(action='navigate', target=['living_room_1', 'kitchen_1']),
-        PlanAction(action='put', target=['chair_1']),
+        PlanAction(action='place_in', target=['chair_1', 'kitchen_1']),
         PlanAction(action='talk', target=['Mary_1'])
         ]
     return plan
@@ -273,6 +281,12 @@ def create_sample_feasible_plan_2():
         PlanAction(action='talk', target=['Mary_1']),
         PlanAction(action='close', target=['fridge_1']),
         PlanAction(action='open', target=['fridge_1']),
+        ]
+    return plan
+
+def create_sample_feasible_plan_3():
+    plan = [
+        PlanAction(action='pick_inside', target=['carrot', 'fridge_1']),
         ]
     return plan
 
@@ -354,6 +368,13 @@ def main(args=None):
     response = client.get_response()
     print('Response received: ' + str(response))
 
+    plan = create_sample_feasible_plan_3()
+    print('Plan to verify:')
+    print_plan('robot_1', plan)
+    client.send_verify_request('robot_1', plan)    
+    response = client.get_response()
+    print('Response received: ' + str(response))
+
     client.create_update_node_client()
     attr = ['fridge', 'white', 'metal', 'heavy', 'big']
     client.send_update_node_request('fridge_1', 'object', attr, ['open', 'close'], 'open')
@@ -361,6 +382,7 @@ def main(args=None):
     print('Response received: ' + str(response))
     
     client.create_verify_client()
+    plan = create_sample_feasible_plan_2()
     print('Plan to verify:')
     print_plan('robot_1', plan)
     client.send_verify_request('robot_1', plan)    
