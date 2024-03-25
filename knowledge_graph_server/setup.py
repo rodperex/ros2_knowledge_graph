@@ -21,7 +21,7 @@ setup(
     entry_points={
     'console_scripts': [
         'server = knowledge_graph_server.kg_server:main',
-        'client = knowledge_graph_server.kg_client:main',
+        'client = knowledge_graph_server.kg_sample_client:main',
         ],
     },
 )

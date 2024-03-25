@@ -46,11 +46,29 @@ class KnowledgeGraphClient(Node):
             self.get_logger().info('service \'add_edge\' not available, waiting again...')
         self.req = AddEdge.Request()
     
+    def create_remove_edge_client(self):
+        self.cli = self.create_client(RemoveEdge, 'remove_edge')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service \'remove_edge\' not available, waiting again...')
+        self.req = RemoveEdge.Request()
+    
     def create_dump_graph_client(self):
         self.cli = self.create_client(DumpGraph, 'dump_graph')
         while not self.cli.wait_for_service(timeout_sec=1.0):
             self.get_logger().info('service \'dump_graph\' not available, waiting again...')
         self.req = DumpGraph.Request()
+
+    def create_operate_client(self):
+        self.cli = self.create_client(Operate, 'operate')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service \'operate\' not available, waiting again...')
+        self.req = Operate.Request()
+
+    def create_nav_route_client(self):
+        self.cli = self.create_client(NavRoute, 'nav_route')
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            self.get_logger().info('service \'nav_route\' not available, waiting again...')
+        self.req = NavRoute.Request()
 
     def send_verify_request(self, robot_id, plan):
         self.req.plan = plan
@@ -78,9 +96,25 @@ class KnowledgeGraphClient(Node):
         self.req.child = child
         self.req.relationship = relationship
         self.future = self.cli.call_async(self.req)
+    
+    def send_remove_edge_request(self, parent, child):
+        self.req.parent = parent
+        self.req.child = child
+        self.future = self.cli.call_async(self.req)
 
     def send_dump_graph_request(self, format):
         self.req.format = format
+        self.future = self.cli.call_async(self.req)
+    
+    def send_operate_request(self, operation, payload, format):
+        self.req.operation = operation
+        self.req.payload = payload
+        self.req.format = format
+        self.future = self.cli.call_async(self.req)
+
+    def send_nav_route_request(self, origin, destination):
+        self.req.origin = origin
+        self.req.destination = destination
         self.future = self.cli.call_async(self.req)
 
     def get_response(self):
@@ -242,6 +276,12 @@ def create_sample_feasible_plan_2():
         ]
     return plan
 
+def create_sample_unfeasible_plan_1():
+    plan = [
+        PlanAction(action='destroy', target=['chair_1']),
+        ]
+    return plan
+
 def print_plan(robot_id, plan):
     print('\t* Robot ID:', robot_id)
     for action in plan:
@@ -263,6 +303,30 @@ def main(args=None):
 
     create_sample_graph(client)
 
+    client.create_nav_route_client()
+    client.send_nav_route_request('kitchen_1', 'living_room_1')
+    response = client.get_response()
+    print('Response received: ' + str(response))
+
+    client.create_operate_client()
+    format = 'json'
+    client.send_operate_request('collapse', ['first_floor'], format)
+    response = client.get_response()
+    if response.success:
+        if format == 'json':
+            graph = create_graph_from_json(response.kg_str)
+        elif format == 'yaml':
+            graph = create_graph_from_yaml(response.kg_str)
+    plt.figure(1)
+    pos = nx.spring_layout(graph)
+    plt.title('Collapsed Scene Graph')
+    nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    edge_labels = nx.get_edge_attributes(graph, 'relationship')
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels)
+    plt.ion()
+    plt.show()
+
+
     client.create_verify_client()
 
     plan = create_sample_feasible_plan_1()
@@ -272,8 +336,17 @@ def main(args=None):
     response = client.get_response()
     print('Response received: ' + str(response))
 
-    # remove edge and add the new one with the new location of chair_1
+    client.create_remove_edge_client()
+    client.send_remove_edge_request('living_room_1', 'chair_1')
+    response = client.get_response()
+    print('Response received: ' + str(response))
+    
+    client.create_add_edge_client()
+    client.send_add_edge_request('kitchen_1', 'chair_1', 'contains')
+    response = client.get_response()
+    print('Response received: ' + str(response))
 
+    client.create_verify_client()
     plan = create_sample_feasible_plan_2()
     print('Plan to verify:')
     print_plan('robot_1', plan)
@@ -294,6 +367,14 @@ def main(args=None):
     response = client.get_response()
     print('Response received: ' + str(response))
 
+    client.create_verify_client()
+    plan = create_sample_unfeasible_plan_1()
+    print('Plan to verify:')
+    print_plan('robot_1', plan)
+    client.send_verify_request('robot_1', plan)    
+    response = client.get_response()
+    print('Response received: ' + str(response))
+
     client.create_dump_graph_client()
     format = 'yaml'
     client.send_dump_graph_request(format)
@@ -304,14 +385,14 @@ def main(args=None):
             graph = create_graph_from_json(response.kg_str)
         elif format == 'yaml':
             graph = create_graph_from_yaml(response.kg_str)
-    plt.figure()
+    plt.figure(2)
     pos = nx.spring_layout(graph)
     plt.title('Scene Graph')
     nx.draw(graph, pos, with_labels=True, font_weight='bold')
     edge_labels = nx.get_edge_attributes(graph, 'relationship')
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels)
-    plt.ion()
     plt.show()
+
     input("Press Enter to close...")
 
     plt.close('all')

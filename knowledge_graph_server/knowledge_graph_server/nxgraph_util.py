@@ -2,6 +2,8 @@ import networkx as nx
 import json
 import yaml
 
+actions = ['navigate', 'pick', 'put', 'talk', 'open', 'close', 'destroy']
+
 def dump_json(graph):
     return json.dumps(nx.readwrite.json_graph.adjacency_data(graph))
 
@@ -127,7 +129,7 @@ def get_immediate_predecessors(graph, node):
 def get_shortest_route(graph, origin, destination):
     if origin not in graph or destination not in graph:
         raise ValueError("Node not found in the graph.")
-
+    
     # predecessors_origin = set([pred for pred in graph.predecessors(origin) if graph.nodes[pred]['type'] == 'floor'])
     # predecessors_destination = set([pred for pred in graph.predecessors(destination) if graph.nodes[pred]['type'] == 'floor'])
 
@@ -162,6 +164,7 @@ def check_edge(graph, source, target, relationship):
     edge = graph.get_edge_data(source, target)
     return edge is not None and edge['relationship'] == relationship
 
+
 def find_entity_location(graph, entity):
     for node, attr in graph.nodes(data=True):
         if node == entity:
@@ -174,12 +177,14 @@ def verify_plan(graph, robot_id, plan):
     feasible = True
     message = 'Plan is feasible'
     evolving_graph = graph.copy()
+    
     for action in plan:
+        robot_location = find_entity_location(evolving_graph, robot_id)
         if (action.action == 'navigate'):
             origin = action.target[0]
             destination = action.target[1]
             
-            if origin != find_entity_location(evolving_graph, robot_id):
+            if origin != robot_location:
                 feasible = False
                 message = 'Navigation impossible: start location (\'%s\') is not the same as the origin (\'%s\')' % (find_entity_location(graph, robot_id), origin)
                 break
@@ -193,58 +198,45 @@ def verify_plan(graph, robot_id, plan):
                 feasible = False
                 message = 'Navigation impossible: %s' % str(e)
                 break
-        elif (action.action == 'pick'):
+        elif action.action in actions:
             target = action.target[0]
-            if not check_affordance(evolving_graph, target, action.action):
-                feasible = False
-                message = 'Object \'%s\' not pickable' % target
-                break
-            if not check_in_place(evolving_graph, target,
-                                find_entity_location(evolving_graph, robot_id)):
-                feasible = False
-                message = 'Object \'%s\' not in place' % target
-                break
-            evolving_graph.add_edge('robot', target, relationship='picked')
 
-        elif (action.action == 'put'):
-            target = action.target[0]
             if not check_affordance(evolving_graph, target, action.action):
                 feasible = False
-                message = 'Object \'%s\' not puttable' % target
+                message = 'Entity \'%s\' not %sable' % (target, action.action)
                 break
-            if not check_edge(evolving_graph, 'robot', target, 'picked'):
-                feasible = False
-                message = 'Object \'%s\' not picked' % target
-                break
-        elif (action.action == 'talk'):
-            target = action.target[0]
-            if not check_affordance(evolving_graph, target, action.action):
-                feasible = False
-                message = 'Person \'%s\' not talkable' % target
-                break
-        elif (action.action == 'open'):
-            target = action.target[0]
-            if not check_affordance(evolving_graph, target, action.action):
-                feasible = False
-                message = 'Object \'%s\' not openable' % target
-                break
-            if not check_status(evolving_graph, target, 'closed'):
-                feasible = False
-                message = 'Object \'%s\' not closed' % target
-                break
-            evolving_graph.nodes[target]['status'] = 'open'
-        elif (action.action == 'close'):
-            target = action.target[0]
-            if not check_affordance(evolving_graph, target, action.action):
-                feasible = False
-                message = 'Object \'%s\' not closable' % target
-                break
-            if not check_status(evolving_graph, target, 'open'):
-                feasible = False
-                message = 'Object \'%s\' not open' % target
-                break
-            evolving_graph.nodes[target]['status'] = 'closed'
+            if not check_in_place(evolving_graph, target, robot_location):
+                if action.action != 'put':
+                    feasible = False
+                    message = 'Entity \'%s\' not in \'%s\'' % (target, robot_location)
+                    break
 
+            if action.action == 'pick':
+                if check_edge(evolving_graph, robot_id, target, 'picked'):
+                    feasible = False
+                    message = 'Object \'%s\' already picked' % target
+                    break
+                evolving_graph.add_edge(robot_id, target, relationship='picked')
+                evolving_graph.remove_edge(robot_location, target)
+            if action.action == 'put':
+                if not check_edge(evolving_graph, robot_id, target, 'picked'):
+                    feasible = False
+                    message = 'Object \'%s\' not picked' % target
+                    break
+                evolving_graph.remove_edge(robot_id, target)
+                evolving_graph.add_edge(robot_location, target, relationship='contains')
+            if action.action == 'open':
+                if check_status(evolving_graph, target, 'open'):
+                    feasible = False
+                    message = 'Object \'%s\' already open' % target
+                    break
+                evolving_graph.nodes[target]['status'] = 'open'
+            if action.action== 'close':
+                if check_status(evolving_graph, target, 'closed'):
+                    feasible = False
+                    message = 'Object \'%s\' already closed' % target
+                    break
+                evolving_graph.nodes[target]['status'] = 'closed'
         else:
             feasible = False
             message = 'Unknown action type: \'%s\'' % action.action

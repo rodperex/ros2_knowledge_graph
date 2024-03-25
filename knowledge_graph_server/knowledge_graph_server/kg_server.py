@@ -152,6 +152,7 @@ class KnowledgeGraphServer(Node):
 
         try:
             response.route = nxutil.get_shortest_route(self.kg, request.origin, request.destination)
+            response.success = True
         except nx.NetworkXNoPath:
             response.route = ''
             response.success = False
@@ -160,7 +161,7 @@ class KnowledgeGraphServer(Node):
         return response
     
     def operate(self, request, response):
-        self.get_logger().info('Performing operation %s' % request.operation)
+        self.get_logger().info('Performing operation \'%s\'' % request.operation)
 
         if request.operation == 'collapse': # collapses the graph around the specified node
             root = request.payload[0]
@@ -195,10 +196,11 @@ class KnowledgeGraphServer(Node):
             response.success = False
         
         if subgraph_str is None:
-            self.get_logger().error('Impossible to perform operation %s' % request.operation)
+            self.get_logger().error('Impossible to perform operation \'%s\'' % request.operation)
             subgraph_str = ''
             response.success = False
         
+        self.get_logger().info('Retrieving \'%s\' result in %s format' % (request.operation, request.format.upper()))
         response.kg_str = subgraph_str
         return response
 
