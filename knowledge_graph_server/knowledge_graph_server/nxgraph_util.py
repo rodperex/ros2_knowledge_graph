@@ -157,64 +157,93 @@ def check_in_place(graph, entity, place):
 def check_status(graph, entity, status):
     return graph.nodes[entity]['status'] == status
 
-def verify_plan(graph, start_location, plan):
+def check_edge(graph, source, target, relationship):
+    # return graph.has_edge(source, target, relationship=relationship)
+    edge = graph.get_edge_data(source, target)
+    return edge is not None and edge['relationship'] == relationship
+
+def find_entity_location(graph, entity):
+    for node, attr in graph.nodes(data=True):
+        if node == entity:
+            continue
+        if entity in graph.successors(node):
+            return node
+    return None
+
+def verify_plan(graph, robot_id, plan):
     feasible = True
     message = 'Plan is feasible'
-    picked = []
-    location = start_location
+    evolving_graph = graph.copy()
     for action in plan:
         if (action.action == 'navigate'):
             origin = action.target[0]
             destination = action.target[1]
             
-            if origin != location:
+            if origin != find_entity_location(evolving_graph, robot_id):
                 feasible = False
-                message = 'Navigation impossible: start location (\'%s\') is not the same as the origin (\'%s\')' % (start_location, origin)
+                message = 'Navigation impossible: start location (\'%s\') is not the same as the origin (\'%s\')' % (find_entity_location(graph, robot_id), origin)
                 break
             try:
-                get_shortest_route(graph, origin, destination)
-                location = destination
+                get_shortest_route(evolving_graph, origin, destination)
+                evolving_graph.remove_edge(origin, robot_id)
+                evolving_graph.add_edge(destination, robot_id,
+                            relationship='contains',
+                            hierarchy='parent')
             except Exception as e:
                 feasible = False
                 message = 'Navigation impossible: %s' % str(e)
                 break
         elif (action.action == 'pick'):
             target = action.target[0]
-            if not check_affordance(graph, target, action.action):
+            if not check_affordance(evolving_graph, target, action.action):
                 feasible = False
                 message = 'Object \'%s\' not pickable' % target
                 break
-            if not check_in_place(graph, target, location):
+            if not check_in_place(evolving_graph, target,
+                                find_entity_location(evolving_graph, robot_id)):
                 feasible = False
-                message = 'Object \'%s\' not in place \'%s\'' % (target, location)
+                message = 'Object \'%s\' not in place' % target
                 break
-            picked.append(target)
+            evolving_graph.add_edge('robot', target, relationship='picked')
+
         elif (action.action == 'put'):
             target = action.target[0]
-            if not check_affordance(graph, target, action.action):
+            if not check_affordance(evolving_graph, target, action.action):
                 feasible = False
                 message = 'Object \'%s\' not puttable' % target
                 break
-            if target not in picked:
+            if not check_edge(evolving_graph, 'robot', target, 'picked'):
                 feasible = False
                 message = 'Object \'%s\' not picked' % target
                 break
         elif (action.action == 'talk'):
             target = action.target[0]
-            if not check_affordance(graph, target, action.action):
+            if not check_affordance(evolving_graph, target, action.action):
                 feasible = False
                 message = 'Person \'%s\' not talkable' % target
                 break
         elif (action.action == 'open'):
             target = action.target[0]
-            if not check_affordance(graph, target, action.action):
+            if not check_affordance(evolving_graph, target, action.action):
                 feasible = False
-                message = 'Person \'%s\' not talkable' % target
+                message = 'Object \'%s\' not openable' % target
                 break
-            if not check_status(graph, target, 'closed'):
+            if not check_status(evolving_graph, target, 'closed'):
                 feasible = False
                 message = 'Object \'%s\' not closed' % target
                 break
+            evolving_graph.nodes[target]['status'] = 'open'
+        elif (action.action == 'close'):
+            target = action.target[0]
+            if not check_affordance(evolving_graph, target, action.action):
+                feasible = False
+                message = 'Object \'%s\' not closable' % target
+                break
+            if not check_status(evolving_graph, target, 'open'):
+                feasible = False
+                message = 'Object \'%s\' not open' % target
+                break
+            evolving_graph.nodes[target]['status'] = 'closed'
 
         else:
             feasible = False

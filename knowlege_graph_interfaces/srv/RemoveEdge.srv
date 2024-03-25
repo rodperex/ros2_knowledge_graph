@@ -1,0 +1,4 @@
+string parent
+string child
+---
+bool success

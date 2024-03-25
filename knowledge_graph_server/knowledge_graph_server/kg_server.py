@@ -1,6 +1,7 @@
 import rclpy
 from knowledge_graph_interfaces.srv import (
     AddEdge,
+    RemoveEdge,
     AddNode,
     UpdateNode,
     DumpGraph,
@@ -25,8 +26,9 @@ class KnowledgeGraphServer(Node):
     def __init__(self):
         super().__init__('knowledge_graph')
         self.srv_edge = self.create_service(AddEdge, 'add_edge', self.add_edge)
+        self.srv_remove_edge = self.create_service(RemoveEdge, 'remove_edge', self.remove_edge)
         self.srv_node = self.create_service(AddNode, 'add_node', self.add_node)
-        self.srv_update = self.create_service(UpdateNode, 'update_node', self.add_node)
+        self.srv_update_node = self.create_service(UpdateNode, 'update_node', self.update_node)
         self.srv_dump = self.create_service(DumpGraph, 'dump_graph', self.dump_graph)
         self.srv_route = self.create_service(NavRoute, 'nav_route', self.nav_route)
         self.srv_operate = self.create_service(Operate, 'operate', self.operate)
@@ -38,12 +40,24 @@ class KnowledgeGraphServer(Node):
         try:
             self.kg.add_edge(request.parent, request.child,
                             relationship=request.relationship,
-                            hierarchy='parent') # hierarchu not necessary in a DiGraph
+                            hierarchy='parent') # hierarchy not necessary in a DiGraph
             response.success = True
         except nx.NetworkXError:
             self.get_logger().error('NetworkX error adding edge')
             response.success = False
     
+        return response
+    
+    def remove_edge(self, request, response):
+        self.get_logger().info('Removing edge %s -> %s' % (request.parent, request.child))
+
+        try:
+            self.kg.remove_edge(request.parent, request.child)
+            response.success = True
+        except nx.NetworkXError:
+            self.get_logger().error('NetworkX error removing edge')
+            response.success = False
+        
         return response
     
     def add_node(self, request, response):
@@ -59,16 +73,15 @@ class KnowledgeGraphServer(Node):
             data = self.object_attr
         elif node_type == 'person':
             data = self.person_attr
+        elif node_type == 'robot':
+            data = []
         else:
             data = None
 
         if data is not None:
-            attr = request.attr
-            attr.append(request.aff)
-
             node_attr = dict(zip(data, request.attr))
             try:
-                self.kg.add_node(request.id, attr=node_attr, affordances=request.aff, status=request.status)
+                self.kg.add_node(request.id, type=request.type, attr=node_attr, affordances=request.aff, status=request.status)
                 response.success = True
             except nx.NetworkXError:
                 self.get_logger().error('NetworkX error adding node %s' % request.id)
@@ -82,23 +95,38 @@ class KnowledgeGraphServer(Node):
     def update_node(self, request, response):
         self.get_logger().info('Updating node %s (type: %s)' % (request.id, request.type))
 
-        node = self.kg.nodes[request.attr[0]]
-        
-        node_type = request.attr[1]
+        node_data = self.kg.nodes[request.id]
+        node_type = request.type
 
-        if node_type != self.kg.nodes[node]['type']:
+        if node_type != node_data['type']:
             self.get_logger().error('Type mismatch')
             response.success = False
         else:
-            attr = request.attr
-            attr.append(request.aff)
+            if node_type == 'floor':
+                data = self.floor_attr
+            elif node_type == 'room':
+                data = self.room_attr
+            elif node_type == 'object':
+                data = self.object_attr
+            elif node_type == 'person':
+                data = self.person_attr
+            elif node_type == 'robot':
+                data = []
+            else:
+                data = None
             
+            node_data['status'] = request.status
+            node_data['affordances'] = request.aff
+            node_data['attr'] = dict(zip(data, request.attr))
+    
             try:
-                self.kg.nodes[node].update(attr)
+                self.kg.nodes[request.id].update(node_data)
+                self.get_logger().info('Node %s updated' % request.id)
                 response.success = True
             except nx.NetworkXError:
-                self.get_logger().error('NetworkX error updating node %s' % node['id'])
+                self.get_logger().error('NetworkX error updating node %s' % request.id)
                 response.success = False
+        return response
         
             
     def dump_graph(self, request, response):
@@ -178,7 +206,7 @@ class KnowledgeGraphServer(Node):
         self.get_logger().info('Verifying plan')
 
         try:
-            ret = nxutil.verify_plan(self.kg, request.start_location, request.plan)
+            ret = nxutil.verify_plan(self.kg, request.robot_id, request.plan)
             response.feasible = ret[0]
             response.message = ret[1]
         except Exception as e:

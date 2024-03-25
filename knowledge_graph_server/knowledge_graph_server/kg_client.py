@@ -2,6 +2,7 @@ import rclpy
 from knowledge_graph_interfaces.msg import PlanAction
 from knowledge_graph_interfaces.srv import (
     AddEdge,
+    RemoveEdge,
     AddNode,
     UpdateNode,
     DumpGraph,
@@ -51,9 +52,9 @@ class KnowledgeGraphClient(Node):
             self.get_logger().info('service \'dump_graph\' not available, waiting again...')
         self.req = DumpGraph.Request()
 
-    def send_verify_request(self, start_location, plan):
+    def send_verify_request(self, robot_id, plan):
         self.req.plan = plan
-        self.req.start_location = start_location
+        self.req.robot_id = robot_id
         self.future = self.cli.call_async(self.req)
 
     def send_add_node_request(self, id, type, attr, aff=[], status=''):
@@ -143,6 +144,10 @@ def create_sample_graph(client):
     response = client.get_response()
     print('Response received: ' + str(response))
 
+    client.send_add_node_request('robot_1', 'robot', [], [])
+    response = client.get_response()
+    print('Response received: ' + str(response))
+
     attr = ['Mary', '56', 'female', 'guest']
     client.send_add_node_request('Mary_1', 'person', attr, ['talk'])
     response = client.get_response()
@@ -197,7 +202,11 @@ def create_sample_graph(client):
     response = client.get_response()
     print('Response received: ' + str(response))
 
-    client.send_add_edge_request('living_room_1', 'Mary_1', 'contains')
+    client.send_add_edge_request('kitchen_1', 'Mary_1', 'contains')
+    response = client.get_response()
+    print('Response received: ' + str(response))
+
+    client.send_add_edge_request('kitchen_1', 'robot_1', 'contains')
     response = client.get_response()
     print('Response received: ' + str(response))
 
@@ -222,17 +231,19 @@ def create_sample_feasible_plan_1():
         PlanAction(action='put', target=['chair_1']),
         PlanAction(action='talk', target=['Mary_1'])
         ]
-    return ['kitchen_1', plan]
+    return plan
 
 def create_sample_feasible_plan_2():
     plan = [
         PlanAction(action='open', target=['fridge_1']),
-        PlanAction(action='talk', target=['Mary_1'])
+        PlanAction(action='talk', target=['Mary_1']),
+        PlanAction(action='close', target=['fridge_1']),
+        PlanAction(action='open', target=['fridge_1']),
         ]
-    return ['kitchen_1', plan]
+    return plan
 
-def print_plan(start_location, plan):
-    print('\t* Start location:', start_location)
+def print_plan(robot_id, plan):
+    print('\t* Robot ID:', robot_id)
     for action in plan:
         print('\t-', action.action, ':', action.target)
 
@@ -254,17 +265,19 @@ def main(args=None):
 
     client.create_verify_client()
 
-    [start_location, plan] = create_sample_feasible_plan_1()
+    plan = create_sample_feasible_plan_1()
     print('Plan to verify:')
-    print_plan(start_location, plan)
-    client.send_verify_request(start_location, plan)    
+    print_plan('robot_1', plan)
+    client.send_verify_request('robot_1', plan)    
     response = client.get_response()
     print('Response received: ' + str(response))
 
-    [start_location, plan] = create_sample_feasible_plan_2()
+    # remove edge and add the new one with the new location of chair_1
+
+    plan = create_sample_feasible_plan_2()
     print('Plan to verify:')
-    print_plan(start_location, plan)
-    client.send_verify_request(start_location, plan)    
+    print_plan('robot_1', plan)
+    client.send_verify_request('robot_1', plan)    
     response = client.get_response()
     print('Response received: ' + str(response))
 
@@ -276,8 +289,8 @@ def main(args=None):
     
     client.create_verify_client()
     print('Plan to verify:')
-    print_plan(start_location, plan)
-    client.send_verify_request(start_location, plan)    
+    print_plan('robot_1', plan)
+    client.send_verify_request('robot_1', plan)    
     response = client.get_response()
     print('Response received: ' + str(response))
 
@@ -303,9 +316,6 @@ def main(args=None):
 
     plt.close('all')
 
-
-    
-    
     client.destroy_node()
     rclpy.shutdown()
 

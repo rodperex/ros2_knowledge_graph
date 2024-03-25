@@ -17,6 +17,7 @@ find_package(std_msgs REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/AddEdge.srv"
+  "srv/RemoveEdge.srv"
   "srv/AddNode.srv"
   "srv/UpdateNode.srv"
   "srv/DumpGraph.srv"

@@ -28,6 +28,10 @@ scene_graph.add_edge('living_room_1', 'chair_1', relationship='contains')
 
 scene_graph.add_node('chair_2', type='object', attr=dict(zip(object_attr, ['chair', 'brown', 'wood', 'light', 'small'])), affordances=['sit'], status='free')
 scene_graph.add_edge('kitchen_1', 'chair_2', relationship='contains')
+node_data = scene_graph.nodes['chair_2']
+node_data['status'] = 'busy'
+node_data['affordances'].append('destroy')
+scene_graph.nodes['chair_2'].update(node_data)
 
 scene_graph.add_node('fridge_1', type='object', attr=dict(zip(object_attr, ['chair', 'brown', 'wood', 'light', 'small'])), affordances=['open', 'close'], status='closed')
 scene_graph.add_edge('kitchen_1', 'fridge_1', relationship='contains')

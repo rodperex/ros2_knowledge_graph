@@ -1,4 +1,4 @@
-string start_location
+string robot_id
 PlanAction[] plan
 ---
 bool feasible
