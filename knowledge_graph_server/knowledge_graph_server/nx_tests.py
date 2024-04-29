@@ -7,7 +7,7 @@ scene_graph = nx.DiGraph()
 
 floor_attr  = ['level']
 room_attr   = ['class', 'shape', 'size']
-object_attr = ['class', 'color', 'material', 'weight', 'area']
+object_attr = ['class', 'color', 'material', 'weight', 'size']
 person_attr = ['name', 'age', 'gender', 'role']
 
 scene_graph.add_node('first_floor', type='floor', attr=dict(zip(floor_attr, ['1'])), affordances=[], status='')

@@ -18,7 +18,7 @@ class KnowledgeGraphServer(Node):
     kg = nx.DiGraph()
     floor_attr  = ['level']
     room_attr   = ['class', 'shape', 'size']
-    object_attr = ['class', 'color', 'material', 'weight', 'area']
+    object_attr = ['class', 'color', 'material', 'weight', 'size']
     person_attr = ['name', 'age', 'gender', 'role']
 
     def __init__(self):
