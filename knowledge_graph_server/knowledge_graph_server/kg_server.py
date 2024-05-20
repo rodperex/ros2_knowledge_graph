@@ -15,28 +15,36 @@ import knowledge_graph_server.nxgraph_util as nxutil
 
 class KnowledgeGraphServer(Node):
     
-    kg = nx.DiGraph()
-    floor_attr  = ['level']
-    room_attr   = ['class', 'shape', 'size']
-    object_attr = ['class', 'color', 'material', 'weight', 'size']
-    person_attr = ['name', 'age', 'gender', 'role']
+    __kg = nx.DiGraph()
+    __floor_attr  = ['level']
+    __room_attr   = ['class', 'shape', 'size']
+    __object_attr = ['class', 'color', 'material', 'weight', 'size']
+    __person_attr = ['name', 'age', 'gender', 'role']
 
     def __init__(self):
         super().__init__('knowledge_graph')
-        self.srv_edge = self.create_service(AddEdge, 'add_edge', self.add_edge)
-        self.srv_remove_edge = self.create_service(RemoveEdge, 'remove_edge', self.remove_edge)
-        self.srv_node = self.create_service(AddNode, 'add_node', self.add_node)
-        self.srv_update_node = self.create_service(UpdateNode, 'update_node', self.update_node)
-        self.srv_dump = self.create_service(DumpGraph, 'dump_graph', self.dump_graph)
-        self.srv_route = self.create_service(NavRoute, 'nav_route', self.nav_route)
-        self.srv_operate = self.create_service(Operate, 'operate', self.operate)
-        self.srv_verify = self.create_service(Verify, 'verify_plan', self.verify_plan)
+        self.srv_edge = self.create_service(
+            AddEdge, 'add_edge', self.__add_edge)
+        self.srv_remove_edge = self.create_service(
+            RemoveEdge, 'remove_edge', self.__remove_edge)
+        self.srv_node = self.create_service(
+            AddNode, 'add_node', self.__add_node)
+        self.srv_update_node = self.create_service(
+            UpdateNode, 'update_node', self.__update_node)
+        self.srv_dump = self.create_service(
+            DumpGraph, 'dump_graph', self.__dump_graph)
+        self.srv_route = self.create_service(
+            NavRoute, 'nav_route', self.__nav_route)
+        self.srv_operate = self.create_service(
+            Operate, 'operate', self.__operate)
+        self.srv_verify = self.create_service(
+            Verify, 'verify_plan', self.__verify_plan)
 
-    def add_edge(self, request, response):
+    def __add_edge(self, request, response):
         self.get_logger().info('Adding edge %s -> %s (%s)' % (request.parent, request.child, request.relationship))
         
         try:
-            self.kg.add_edge(request.parent, request.child,
+            self.__kg.add_edge(request.parent, request.child,
                             relationship=request.relationship,
                             hierarchy='parent') # hierarchy not necessary in a DiGraph
             response.success = True
@@ -46,11 +54,11 @@ class KnowledgeGraphServer(Node):
     
         return response
     
-    def remove_edge(self, request, response):
+    def __remove_edge(self, request, response):
         self.get_logger().info('Removing edge %s -> %s' % (request.parent, request.child))
 
         try:
-            self.kg.remove_edge(request.parent, request.child)
+            self.__kg.remove_edge(request.parent, request.child)
             response.success = True
         except nx.NetworkXError:
             self.get_logger().error('NetworkX error removing edge')
@@ -58,19 +66,19 @@ class KnowledgeGraphServer(Node):
         
         return response
     
-    def add_node(self, request, response):
+    def __add_node(self, request, response):
         self.get_logger().info('Adding node %s (type: %s)' % (request.id, request.type))
         
         node_type = request.type
 
         if node_type == 'floor':
-            data = self.floor_attr
+            data = self.__floor_attr
         elif node_type == 'room':
-            data = self.room_attr
+            data = self.__room_attr
         elif node_type == 'object':
-            data = self.object_attr
+            data = self.__object_attr
         elif node_type == 'person':
-            data = self.person_attr
+            data = self.__person_attr
         elif node_type == 'robot':
             data = []
         else:
@@ -79,7 +87,7 @@ class KnowledgeGraphServer(Node):
         if data is not None:
             node_attr = dict(zip(data, request.attr))
             try:
-                self.kg.add_node(request.id, type=request.type, attr=node_attr, affordances=request.aff, status=request.status)
+                self.__kg.add_node(request.id, type=request.type, attr=node_attr, affordances=request.aff, status=request.status)
                 response.success = True
             except nx.NetworkXError:
                 self.get_logger().error('NetworkX error adding node %s' % request.id)
@@ -90,10 +98,10 @@ class KnowledgeGraphServer(Node):
         
         return response
     
-    def update_node(self, request, response):
+    def __update_node(self, request, response):
         self.get_logger().info('Updating node %s (type: %s)' % (request.id, request.type))
 
-        node_data = self.kg.nodes[request.id]
+        node_data = self.__kg.nodes[request.id]
         node_type = request.type
 
         if node_type != node_data['type']:
@@ -101,13 +109,13 @@ class KnowledgeGraphServer(Node):
             response.success = False
         else:
             if node_type == 'floor':
-                data = self.floor_attr
+                data = self.__floor_attr
             elif node_type == 'room':
-                data = self.room_attr
+                data = self.__room_attr
             elif node_type == 'object':
-                data = self.object_attr
+                data = self.__object_attr
             elif node_type == 'person':
-                data = self.person_attr
+                data = self.__person_attr
             elif node_type == 'robot':
                 data = []
             else:
@@ -118,7 +126,7 @@ class KnowledgeGraphServer(Node):
             node_data['attr'] = dict(zip(data, request.attr))
     
             try:
-                self.kg.nodes[request.id].update(node_data)
+                self.__kg.nodes[request.id].update(node_data)
                 self.get_logger().info('Node %s updated' % request.id)
                 response.success = True
             except nx.NetworkXError:
@@ -127,12 +135,12 @@ class KnowledgeGraphServer(Node):
         return response
         
             
-    def dump_graph(self, request, response):
+    def __dump_graph(self, request, response):
         self.get_logger().info('Dumping graph in %s format' % request.format.upper())
 
         try:
             response.success = True
-            kg_str = nxutil.graph_to_str(self.kg, request.format)
+            kg_str = nxutil.graph_to_str(self.__kg, request.format)
             if kg_str is None:
                 self.get_logger().error('Unknown format %s' % request.format)
                 kg_str = ''
@@ -145,11 +153,11 @@ class KnowledgeGraphServer(Node):
         return response
     
     
-    def nav_route(self, request, response):
+    def __nav_route(self, request, response):
         self.get_logger().info('Finding route between %s and %s' % (request.origin, request.destination))
 
         try:
-            response.route = nxutil.get_shortest_route(self.kg, request.origin, request.destination)
+            response.route = nxutil.get_shortest_route(self.__kg, request.origin, request.destination)
             response.success = True
         except nx.NetworkXNoPath:
             response.route = ''
@@ -158,12 +166,12 @@ class KnowledgeGraphServer(Node):
             
         return response
     
-    def operate(self, request, response):
+    def __operate(self, request, response):
         self.get_logger().info('Performing operation \'%s\'' % request.operation)
 
         if request.operation == 'collapse': # collapses the graph around the specified node
             root = request.payload[0]
-            subgraph = nxutil.collapse_graph(root, self.kg)
+            subgraph = nxutil.collapse_graph(root, self.__kg)
             if subgraph is not None:
                 subgraph_str = nxutil.graph_to_str(subgraph, request.format)
                 response.success = True
@@ -174,7 +182,7 @@ class KnowledgeGraphServer(Node):
             subgraph_str = request.payload[1]
             subgraph = nxutil.str_to_graph(subgraph_str, request.format)
             if subgraph is not None:
-                subgraph = nxutil.expand_graph(node, self.kg, subgraph)
+                subgraph = nxutil.expand_graph(node, self.__kg, subgraph)
                 subgraph_str = nxutil.graph_to_str(subgraph, request.format)
             else:
                 subgraph_str = None
@@ -202,11 +210,11 @@ class KnowledgeGraphServer(Node):
         response.kg_str = subgraph_str
         return response
 
-    def verify_plan(self, request, response):
+    def __verify_plan(self, request, response):
         self.get_logger().info('Verifying plan')
 
         try:
-            ret = nxutil.verify_plan(self.kg, request.robot_id, request.plan)
+            ret = nxutil.verify_plan(self.__kg, request.robot_id, request.plan)
             response.feasible = ret[0]
             response.message = ret[1]
         except Exception as e:
