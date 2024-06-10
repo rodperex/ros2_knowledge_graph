@@ -4,11 +4,8 @@
   <name>knowledge_graph_server</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="rodrigo.perez@urjc.es">rod</maintainer>
+  <maintainer email="rodrigo.perez@urjc.es">roi</maintainer>
   <license>TODO: License declaration</license>
-
-  <depend>rclpy</depend>
-  <depend>knowledge_graph_interfaces</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
