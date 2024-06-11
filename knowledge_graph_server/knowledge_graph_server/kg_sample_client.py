@@ -129,140 +129,140 @@ class KnowledgeGraphClient(Node):
 
 
 def create_sample_graph(client):
-    
+  
     client.create_add_node_client()
 
     attr = ['1']
     client.send_add_node_request('first_floor', 'floor', attr)
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['0']
     client.send_add_node_request('ground_floor', 'floor',attr)
     response = client.get_response()
-    print('Response received: ' + str(response))
-
+    client.get_logger().debug('Response received: ' + str(response))
+    
     attr = ['kitchen', 'square', 'big']
     client.send_add_node_request('kitchen_1', 'room', attr)
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['living_room', 'square', 'big']
     client.send_add_node_request('living_room_1', 'room', attr)
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['table', 'brown', 'wood', 'heavy', 'big']
     client.send_add_node_request('table_1', 'object', attr, ['put on', 'pick from'])
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['chair', 'brown', 'wood', 'light', 'small']
     client.send_add_node_request('chair_1', 'object', attr, ['sit', 'pick', 'place_in'], 'free')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['chair', 'brown', 'wood', 'light', 'small']
     client.send_add_node_request('chair_2', 'object', attr, ['sit'], 'free')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['fridge', 'white', 'metal', 'heavy', 'big']
     client.send_add_node_request('fridge_1', 'object', attr, ['open', 'close'], 'close')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['carrot', 'orange', 'vegetable', 'fresh', 'small']
     client.send_add_node_request('carrot', 'object', attr, ['pick', 'place_into'])
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['John', '30', 'male', 'owner']
     client.send_add_node_request('John_1', 'person', attr, ['talk'])
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_node_request('robot_1', 'robot', [], [])
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['Mary', '56', 'female', 'guest']
     client.send_add_node_request('Mary_1', 'person', attr, ['talk'])
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['bedroom', 'square', 'small']
     client.send_add_node_request('bedroom_1', 'room', attr)
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['bed', 'blue', 'wood', 'heavy', 'medium']
     client.send_add_node_request('bed_1', 'object', attr, ['make'], 'free')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     attr = ['Magic', '33', 'male', 'guest']
     client.send_add_node_request('Magic_1', 'person', attr)
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
 
     client.create_add_edge_client()
     client.send_add_edge_request('ground_floor', 'first_floor', 'connects')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
-    client.send_add_edge_request('first_floor', 'kitchen_1', 'contains')
+    client.send_add_edge_request('ground_floor', 'kitchen_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('first_floor', 'living_room_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('living_room_1', 'table_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('living_room_1', 'chair_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('living_room_1', 'chair_2', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('kitchen_1', 'fridge_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('fridge_1', 'carrot', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('living_room_1', 'John_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('kitchen_1', 'Mary_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('kitchen_1', 'robot_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('first_floor', 'bedroom_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('bedroom_1', 'bed_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
     client.send_add_edge_request('bedroom_1', 'Magic_1', 'contains')
     response = client.get_response()
-    print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
 
 
 def create_sample_feasible_plan_1():
@@ -317,98 +317,126 @@ def main(args=None):
 
     create_sample_graph(client)
 
-    client.create_nav_route_client()
-    client.send_nav_route_request('kitchen_1', 'living_room_1')
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # client.create_nav_route_client()
+    # client.send_nav_route_request('kitchen_1', 'living_room_1')
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
 
     client.create_operate_client()
     format = 'json'
-    client.send_operate_request('collapse', ['first_floor'], format)
+    client.send_operate_request('collapse', ['ground_floor'], format)
     response = client.get_response()
     if response.success:
         if format == 'json':
             graph = create_graph_from_json(response.kg_str)
         elif format == 'yaml':
             graph = create_graph_from_yaml(response.kg_str)
+    client.get_logger().info('Nodes after collapsing around ground_floor: ' + str(graph.nodes))
     plt.figure(1)
     pos = nx.spring_layout(graph)
-    plt.title('Collapsed Scene Graph')
+    plt.title('Collapsed cene graph around ground_floor')
     nx.draw(graph, pos, with_labels=True, font_weight='bold')
     edge_labels = nx.get_edge_attributes(graph, 'relationship')
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels)
     plt.ion()
     plt.show()
 
+    format = 'yaml'
+    client.send_operate_request('expand', ['kitchen_1', '1'], format)
+    response2 = client.get_response()
+    current_graph_str = response2.kg_str
+    if response.success:
+        if format == 'json':
+            graph = create_graph_from_json(current_graph_str)
+        elif format == 'yaml':
+            graph = create_graph_from_yaml(current_graph_str)
+    client.get_logger().info('Nodes after expanding around kitchen_1: ' + str(graph.nodes))
+    plt.figure(2)
+    pos = nx.spring_layout(graph)
+    plt.title('Scene graph expanded around kitchen_1')
+    nx.draw(graph, pos, with_labels=True, font_weight='bold')
+    edge_labels = nx.get_edge_attributes(graph, 'relationship')
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels)
+    plt.ion()
+    plt.show()
 
-    client.create_verify_client()
+    # client.create_verify_client()
 
-    plan = create_sample_feasible_plan_1()
-    print('Plan to verify:')
-    print_plan('robot_1', plan)
-    client.send_verify_request('robot_1', plan)    
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # plan = create_sample_feasible_plan_1()
+    # print('Plan to verify:')
+    # print_plan('robot_1', plan)
+    # client.send_verify_request('robot_1', plan)    
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
 
-    client.create_remove_edge_client()
-    client.send_remove_edge_request('living_room_1', 'chair_1')
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # client.create_remove_edge_client()
+    # client.send_remove_edge_request('living_room_1', 'chair_1')
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
     
-    client.create_add_edge_client()
-    client.send_add_edge_request('kitchen_1', 'chair_1', 'contains')
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # client.create_add_edge_client()
+    # client.send_add_edge_request('kitchen_1', 'chair_1', 'contains')
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
 
-    client.create_verify_client()
-    plan = create_sample_feasible_plan_2()
-    print('Plan to verify:')
-    print_plan('robot_1', plan)
-    client.send_verify_request('robot_1', plan)    
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # client.create_verify_client()
+    # plan = create_sample_feasible_plan_2()
+    # print('Plan to verify:')
+    # print_plan('robot_1', plan)
+    # client.send_verify_request('robot_1', plan)    
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
 
 
-    client.create_update_node_client()
-    attr = ['fridge', 'white', 'metal', 'heavy', 'big']
-    client.send_update_node_request('fridge_1', 'object', attr, ['open', 'close'], 'open')
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # client.create_update_node_client()
+    # attr = ['fridge', 'white', 'metal', 'heavy', 'big']
+    # client.send_update_node_request('fridge_1', 'object', attr, ['open', 'close'], 'open')
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
 
-    client.create_verify_client()
-    plan = create_sample_feasible_plan_3()
-    print('Plan to verify:')
-    print_plan('robot_1', plan)
-    client.send_verify_request('robot_1', plan)    
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # client.create_verify_client()
+    # plan = create_sample_feasible_plan_3()
+    # print('Plan to verify:')
+    # print_plan('robot_1', plan)
+    # client.send_verify_request('robot_1', plan)    
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
         
-    plan = create_sample_feasible_plan_2()
-    print('Plan to verify:')
-    print_plan('robot_1', plan)
-    client.send_verify_request('robot_1', plan)    
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # plan = create_sample_feasible_plan_2()
+    # print('Plan to verify:')
+    # print_plan('robot_1', plan)
+    # client.send_verify_request('robot_1', plan)    
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
 
-    client.create_verify_client()
-    plan = create_sample_unfeasible_plan_1()
-    print('Plan to verify:')
-    print_plan('robot_1', plan)
-    client.send_verify_request('robot_1', plan)    
-    response = client.get_response()
-    print('Response received: ' + str(response))
+    # client.create_verify_client()
+    # plan = create_sample_unfeasible_plan_1()
+    # print('Plan to verify:')
+    # print_plan('robot_1', plan)
+    # client.send_verify_request('robot_1', plan)    
+    # response = client.get_response()
+    # client.get_logger().debug('Response received: ' + str(response))
 
     client.create_dump_graph_client()
     format = 'yaml'
     client.send_dump_graph_request(format)
     response = client.get_response()
-    # print('Response received: ' + str(response))
+    client.get_logger().debug('Response received: ' + str(response))
+
+    file_path = 'src/ros2_knowledge_graph/knowledge_graph_server/dumped_graphs/sample_graph.'+ format
+    client.get_logger().info('Saving knowledge graph in %s' % file_path)
     if response.success:
         if format == 'json':
             graph = create_graph_from_json(response.kg_str)
+            with open(file_path, 'w') as file:
+                json.dump(nx.to_dict_of_dicts(graph), file, indent=4)
         elif format == 'yaml':
             graph = create_graph_from_yaml(response.kg_str)
-    plt.figure(2)
+            with open(file_path, 'w') as file:
+                yaml.dump(nx.to_dict_of_dicts(graph), file, default_flow_style=False)
+    
+
+    plt.figure(3)
     pos = nx.spring_layout(graph)
     plt.title('Scene Graph')
     nx.draw(graph, pos, with_labels=True, font_weight='bold')

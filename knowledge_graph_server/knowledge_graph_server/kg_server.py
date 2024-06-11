@@ -16,6 +16,7 @@ import knowledge_graph_server.nxgraph_util as nxutil
 class KnowledgeGraphServer(Node):
     
     __kg = nx.DiGraph()
+    __working_graph = __kg
     __floor_attr  = ['level']
     __room_attr   = ['class', 'shape', 'size']
     __object_attr = ['class', 'color', 'material', 'weight', 'size']
@@ -48,6 +49,7 @@ class KnowledgeGraphServer(Node):
                             relationship=request.relationship,
                             hierarchy='parent') # hierarchy not necessary in a DiGraph
             response.success = True
+            self.__working_graph = self.__kg
         except nx.NetworkXError:
             self.get_logger().error('NetworkX error adding edge')
             response.success = False
@@ -60,6 +62,7 @@ class KnowledgeGraphServer(Node):
         try:
             self.__kg.remove_edge(request.parent, request.child)
             response.success = True
+            self.__working_graph = self.__kg
         except nx.NetworkXError:
             self.get_logger().error('NetworkX error removing edge')
             response.success = False
@@ -89,6 +92,7 @@ class KnowledgeGraphServer(Node):
             try:
                 self.__kg.add_node(request.id, type=request.type, attr=node_attr, affordances=request.aff, status=request.status)
                 response.success = True
+                self.__working_graph = self.__kg
             except nx.NetworkXError:
                 self.get_logger().error('NetworkX error adding node %s' % request.id)
                 response.success = False
@@ -129,6 +133,7 @@ class KnowledgeGraphServer(Node):
                 self.__kg.nodes[request.id].update(node_data)
                 self.get_logger().info('Node %s updated' % request.id)
                 response.success = True
+                self.__working_graph = self.__kg
             except nx.NetworkXError:
                 self.get_logger().error('NetworkX error updating node %s' % request.id)
                 response.success = False
@@ -167,48 +172,72 @@ class KnowledgeGraphServer(Node):
         return response
     
     def __operate(self, request, response):
-        self.get_logger().info('Performing operation \'%s\'' % request.operation)
+        self.get_logger().info('Operation request: %s' % request.operation)
 
-        if request.operation == 'collapse': # collapses the graph around the specified node
-            root = request.payload[0]
-            subgraph = nxutil.collapse_graph(root, self.__kg)
-            if subgraph is not None:
-                subgraph_str = nxutil.graph_to_str(subgraph, request.format)
+        if self.__working_graph == self.__kg:
+            self.get_logger().info('Working graph is the SAME as the Knowledge Graph')
+        else:
+            self.get_logger().info('Working graph is DIFFERENT from the Knowledge Graph')
+
+        try:
+            if request.operation == 'collapse': # collapses the graph around the specified node
+                root = request.payload[0]
+                self.get_logger().info('Collapsing around %s' % root)
+                self.get_logger().debug('KG nodes: %s' % self.__kg.nodes)
+                self.get_logger().info('Working graph nodes: %s' % self.__working_graph.nodes)
+                subgraph = nxutil.collapse_graph(root, self.__working_graph)
+                if subgraph is not None:
+                    self.get_logger().info('Subgraph nodes: %s' % subgraph.nodes)
+                    subgraph_str = nxutil.graph_to_str(subgraph, request.format)
+                    response.success = True
+                    self.__working_graph = subgraph
+                else:
+                    subgraph_str = None
+            elif request.operation == 'expand': # expands level below the specified node
+                node = request.payload[0]
+                self.get_logger().info('Expanding around %s' % node)
+                self.get_logger().debug('KG nodes: %s' % self.__kg.nodes)
+                self.get_logger().info('Working graph nodes: %s' % self.__working_graph.nodes)
+                subgraph = nxutil.expand_graph(node, self.__kg, self.__working_graph,
+                                               levels=int(request.payload[1]))
+                if subgraph is not None:
+                    self.get_logger().info('Subgraph nodes: %s' % subgraph.nodes)
+                    subgraph_str = nxutil.graph_to_str(subgraph, request.format)
+                    self.__working_graph = subgraph
+                else:
+                    subgraph_str = None
+            elif request.operation == 'contract': # contracts level below the specified node
+                node = request.payload[0]
+                self.get_logger().info('Contracting %s' % node)
+                self.get_logger().debug('KG nodes: %s' % self.__kg.nodes)
+                self.get_logger().info('Working graph nodes: %s' % self.__working_graph.nodes)
+                if subgraph is not None:
+                    self.get_logger().info('Subgraph nodes: %s' % subgraph.nodes)
+                    subgraph = nxutil.contract_graph(node, self.__working_graph)
+                    subgraph_str = nxutil.graph_to_str(subgraph, request.format)
+                    self.__working_graph = subgraph
+                else:
+                    subgraph_str = None
                 response.success = True
             else:
-                subgraph_str = None
-        elif request.operation == 'expand': # expands level below the specified node
-            node = request.payload[0]
-            subgraph_str = request.payload[1]
-            subgraph = nxutil.str_to_graph(subgraph_str, request.format)
-            if subgraph is not None:
-                subgraph = nxutil.expand_graph(node, self.__kg, subgraph)
-                subgraph_str = nxutil.graph_to_str(subgraph, request.format)
-            else:
-                subgraph_str = None
-        elif request.operation == 'contract': # contracts level below the specified node
-            node = request.payload[0]
-            subgraph_str = request.payload[1]
-            subgraph = nxutil.str_to_graph(subgraph_str, request.format)
-            if subgraph is not None:
-                subgraph = nxutil.contract_graph(node, subgraph)
-                subgraph_str = nxutil.graph_to_str(subgraph, request.format)
-            else:
-                subgraph_str = None
-            response.success = True
-        else:
-            self.get_logger().error('Unknown operation %s' % request.operation)
-            subgraph_str = ''
+                self.get_logger().error('Unknown operation %s' % request.operation)
+                subgraph_str = ''
+                response.success = False
+            
+            if subgraph_str is None:
+                self.get_logger().error('Impossible to perform operation \'%s\'' % request.operation)
+                subgraph_str = ''
+                response.success = False
+            
+            self.get_logger().info('Retrieving \'%s\' result in %s format' % (request.operation, request.format.upper()))
+            response.kg_str = subgraph_str
+            self.get_logger().debug('Operation result: %s' % response.kg_str)
+            return response
+        except Exception as e:
+            self.get_logger().error('Error performing operation: %r' % (e,))
             response.success = False
-        
-        if subgraph_str is None:
-            self.get_logger().error('Impossible to perform operation \'%s\'' % request.operation)
-            subgraph_str = ''
-            response.success = False
-        
-        self.get_logger().info('Retrieving \'%s\' result in %s format' % (request.operation, request.format.upper()))
-        response.kg_str = subgraph_str
-        return response
+            response.kg_str = ''
+            return response
 
     def __verify_plan(self, request, response):
         self.get_logger().info('Verifying plan')

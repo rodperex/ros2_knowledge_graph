@@ -53,6 +53,7 @@ def collapse_graph(root, graph):
 
     try:
         subgraph_nodes = list(graph.neighbors(root))
+        subgraph_nodes += list(graph.predecessors(root))  # Add the parent nodes
         subgraph_nodes.append(root)  # Add the root node to the list of neighbors
         subgraph = graph.subgraph(subgraph_nodes)
     except nx.NetworkXError:
