@@ -102,8 +102,9 @@ class KnowledgeGraphClient(Node):
         self.req.child = child
         self.future = self.cli.call_async(self.req)
 
-    def send_dump_graph_request(self, format):
+    def send_dump_graph_request(self, format, full):
         self.req.format = format
+        self.req.full = full
         self.future = self.cli.call_async(self.req)
     
     def send_operate_request(self, operation, payload, format):
@@ -417,13 +418,17 @@ def main(args=None):
     # response = client.get_response()
     # client.get_logger().debug('Response received: ' + str(response))
 
+    full = False
     client.create_dump_graph_client()
     format = 'yaml'
-    client.send_dump_graph_request(format)
+    client.send_dump_graph_request(format, full)
     response = client.get_response()
     client.get_logger().debug('Response received: ' + str(response))
 
-    file_path = 'src/ros2_knowledge_graph/knowledge_graph_server/dumped_graphs/sample_graph.'+ format
+    if full:
+        file_path = 'src/ros2_knowledge_graph/knowledge_graph_server/dumped_graphs/full_sample_graph.'+ format
+    else:
+        file_path = 'src/ros2_knowledge_graph/knowledge_graph_server/dumped_graphs/sample_graph.'+ format
     client.get_logger().info('Saving knowledge graph in %s' % file_path)
     if response.success:
         if format == 'json':
@@ -433,7 +438,9 @@ def main(args=None):
         elif format == 'yaml':
             graph = create_graph_from_yaml(response.kg_str)
             with open(file_path, 'w') as file:
-                yaml.dump(nx.to_dict_of_dicts(graph), file, default_flow_style=False)
+                file.write(response.kg_str)
+                # yaml.dump(nx.to_dict_of_dicts(graph), file,
+                #           default_flow_style=False, allow_unicode=False)
     
 
     plt.figure(3)

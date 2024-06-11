@@ -33,7 +33,7 @@ class KnowledgeGraphServer(Node):
         self.srv_update_node = self.create_service(
             UpdateNode, 'update_node', self.__update_node)
         self.srv_dump = self.create_service(
-            DumpGraph, 'dump_graph', self.__dump_graph)
+            DumpGraph, 'dump_graph', self.__dump_kg)
         self.srv_route = self.create_service(
             NavRoute, 'nav_route', self.__nav_route)
         self.srv_operate = self.create_service(
@@ -140,12 +140,17 @@ class KnowledgeGraphServer(Node):
         return response
         
             
-    def __dump_graph(self, request, response):
-        self.get_logger().info('Dumping graph in %s format' % request.format.upper())
-
+    def __dump_kg(self, request, response):
+    
         try:
+            if request.full:
+                self.get_logger().info('Dumping knowledge graph in %s format' % request.format.upper())
+                graph = self.__kg
+            else:
+                self.get_logger().info('Dumping working graph in %s format' % request.format.upper())
+                graph = self.__working_graph
             response.success = True
-            kg_str = nxutil.graph_to_str(self.__kg, request.format)
+            kg_str = self.__dump_nxgraph(graph, request.format)
             if kg_str is None:
                 self.get_logger().error('Unknown format %s' % request.format)
                 kg_str = ''
@@ -157,6 +162,14 @@ class KnowledgeGraphServer(Node):
         response.kg_str = kg_str
         return response
     
+    def __dump_nxgraph(self, graph, format):
+        self.get_logger().info('Dumping graph in %s format' % format.upper())
+
+        g_str = nxutil.graph_to_str(graph, format)
+        if g_str is None:
+            g_str = ''
+              
+        return g_str
     
     def __nav_route(self, request, response):
         self.get_logger().info('Finding route between %s and %s' % (request.origin, request.destination))
@@ -173,11 +186,6 @@ class KnowledgeGraphServer(Node):
     
     def __operate(self, request, response):
         self.get_logger().info('Operation request: %s' % request.operation)
-
-        if self.__working_graph == self.__kg:
-            self.get_logger().info('Working graph is the SAME as the Knowledge Graph')
-        else:
-            self.get_logger().info('Working graph is DIFFERENT from the Knowledge Graph')
 
         try:
             if request.operation == 'collapse': # collapses the graph around the specified node
