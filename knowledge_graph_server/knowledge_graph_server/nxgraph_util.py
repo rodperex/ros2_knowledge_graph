@@ -100,11 +100,12 @@ def expand_graph(node, graph, subgraph, levels=1):
         
         new_successors = successors_in_kg - successors_in_subgraph
         
-        subgraph.add_nodes_from(new_successors)
+        # subgraph.add_nodes_from(new_successors)
+        for successor in new_successors:
+            if successor not in expanded_subgraph:
+                expanded_subgraph.add_node(successor, **graph.nodes[successor])
         
         for successor in new_successors:
-            if successor not in subgraph:
-                subgraph.add_node(successor)
             for edge in graph.edges(node, data=True):
                 if edge[1] == successor:
                     subgraph.add_edge(*edge[:2], **edge[2])
