@@ -71,6 +71,8 @@ class KnowledgeGraphServer(Node):
     
     def __add_node(self, request, response):
         self.get_logger().info('Adding node %s (type: %s)' % (request.id, request.type))
+        self.get_logger().info('\t- Attributes: %s' % request.attr)
+        self.get_logger().info('\t- Affordances: %s' % request.aff)
         
         node_type = request.type
 
