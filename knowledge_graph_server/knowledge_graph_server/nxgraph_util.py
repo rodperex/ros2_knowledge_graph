@@ -27,7 +27,7 @@ def dump_json(graph):
     return json.dumps(nx.readwrite.json_graph.adjacency_data(graph))
 
 def dump_yaml(graph):
-    return yaml.dump(nx.node_link_data(graph))
+    return yaml.dump(nx.node_link_data(graph), default_flow_style=False)
 
 def graph_to_str(graph, format):
     if format == 'json':
