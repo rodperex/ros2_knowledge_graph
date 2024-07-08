@@ -335,7 +335,7 @@ def main(args=None):
     client.get_logger().info('Nodes after collapsing around ground_floor: ' + str(graph.nodes))
     plt.figure(1)
     pos = nx.spring_layout(graph)
-    plt.title('Collapsed cene graph around ground_floor')
+    plt.title('Collapsed scene graph around ground_floor')
     nx.draw(graph, pos, with_labels=True, font_weight='bold')
     edge_labels = nx.get_edge_attributes(graph, 'relationship')
     nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels)
