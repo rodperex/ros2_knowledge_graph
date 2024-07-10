@@ -21,6 +21,7 @@ class KnowledgeGraphServer(Node):
     __room_attr   = ['class', 'shape', 'size']
     __object_attr = ['class', 'color', 'material', 'weight', 'size']
     __person_attr = ['name', 'age', 'gender', 'role']
+    __patient_attr = [__person_attr, 'condition', 'treatment', 'room']
 
     def __init__(self):
         super().__init__('knowledge_graph')
